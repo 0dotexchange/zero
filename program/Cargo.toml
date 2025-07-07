@@ -1,0 +1,16 @@
+[package]
+name = "zero-governance"
+version = "0.1.0"
+edition = "2021"
+description = "AGI DAO governance program for the Zero protocol on Solana"
+license = "Apache-2.0"
+
+[dependencies]
+solana-program = "1.18"
+borsh = "0.10"
+thiserror = "1.0"
+num-derive = "0.4"
+num-traits = "0.2"
+
+[lib]
+crate-type = ["cdylib", "lib"]
