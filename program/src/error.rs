@@ -28,3 +28,28 @@ pub enum ZeroError {
 
     #[error("Proposal is not in active voting state")]
     ProposalNotActive,
+
+    #[error("Voting period has not ended yet")]
+    VotingPeriodNotEnded,
+
+    #[error("Voting period has already ended")]
+    VotingPeriodEnded,
+
+    #[error("Voter has already cast a vote on this proposal")]
+    AlreadyVoted,
+
+    #[error("Agent is not registered with this DAO")]
+    AgentNotRegistered,
+
+    #[error("Agent is already registered")]
+    AgentAlreadyRegistered,
+
+    #[error("Insufficient token balance for this action")]
+    InsufficientBalance,
+
+    #[error("Maximum active proposal limit reached")]
+    MaxProposalsReached,
+
+    #[error("Quorum has not been reached")]
+    QuorumNotReached,
+
