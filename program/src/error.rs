@@ -53,3 +53,43 @@ pub enum ZeroError {
     #[error("Quorum has not been reached")]
     QuorumNotReached,
 
+    #[error("Treasury has insufficient funds for withdrawal")]
+    InsufficientTreasuryFunds,
+
+    #[error("Invalid vote weight provided")]
+    InvalidVoteWeight,
+
+    #[error("Proposal execution payload is invalid")]
+    InvalidExecutionPayload,
+
+    #[error("Agent reputation is below the required threshold")]
+    ReputationTooLow,
+
+    #[error("Delegation target is invalid or circular")]
+    InvalidDelegation,
+}
+
+impl From<ZeroError> for ProgramError {
+    fn from(e: ZeroError) -> Self {
+        ProgramError::Custom(e as u32)
+    }
+}
+
+impl<T> DecodeError<T> for ZeroError {
+    fn type_of() -> &'static str {
+        "ZeroError"
+    }
+}
+
+impl PrintProgramError for ZeroError {
+    fn print<E>(&self)
+    where
+        E: 'static
+            + std::error::Error
+            + DecodeError<E>
+            + PrintProgramError
+            + num_traits::FromPrimitive,
+    {
+        msg!(&self.to_string());
+    }
+}
