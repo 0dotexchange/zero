@@ -13,3 +13,33 @@ pub const MAX_AGENT_NAME_LEN: usize = 64;
 
 pub fn find_dao_address(program_id: &Pubkey, name: &str) -> (Pubkey, u8) {
     Pubkey::find_program_address(&[DAO_SEED, name.as_bytes()], program_id)
+}
+
+pub fn find_proposal_address(
+    program_id: &Pubkey,
+    dao: &Pubkey,
+    proposal_id: u64,
+) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[PROPOSAL_SEED, dao.as_ref(), &proposal_id.to_le_bytes()],
+        program_id,
+    )
+}
+
+pub fn find_agent_address(program_id: &Pubkey, dao: &Pubkey, owner: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[AGENT_SEED, dao.as_ref(), owner.as_ref()], program_id)
+}
+
+pub fn find_treasury_address(program_id: &Pubkey, dao: &Pubkey) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[TREASURY_SEED, dao.as_ref()], program_id)
+}
+
+pub fn find_vote_record_address(
+    program_id: &Pubkey,
+    proposal: &Pubkey,
+    voter: &Pubkey,
+) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[VOTE_RECORD_SEED, proposal.as_ref(), voter.as_ref()],
+        program_id,
+    )
