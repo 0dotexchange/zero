@@ -43,3 +43,24 @@ pub fn find_vote_record_address(
         &[VOTE_RECORD_SEED, proposal.as_ref(), voter.as_ref()],
         program_id,
     )
+}
+
+pub fn checked_add(a: u64, b: u64) -> Option<u64> {
+    a.checked_add(b)
+}
+
+pub fn checked_sub(a: u64, b: u64) -> Option<u64> {
+    a.checked_sub(b)
+}
+
+pub fn basis_points_to_fraction(bps: u16, value: u64) -> u64 {
+    ((value as u128 * bps as u128) / 10_000u128) as u64
+}
+
+pub fn calculate_quorum_threshold(total_supply: u64, quorum_bps: u16) -> u64 {
+    basis_points_to_fraction(quorum_bps, total_supply)
+}
+
+pub fn validate_string_length(s: &str, max_len: usize) -> bool {
+    !s.is_empty() && s.len() <= max_len
+}
