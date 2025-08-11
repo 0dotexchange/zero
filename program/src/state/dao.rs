@@ -38,3 +38,18 @@ impl Dao {
         + 8    // total_delegated_weight
         + 8    // created_at
         + 1;   // bump
+
+    pub fn validate_config(&self) -> bool {
+        self.quorum_bps <= 10_000
+            && self.approval_threshold_bps <= 10_000
+            && self.approval_threshold_bps > 0
+            && self.voting_period > 0
+            && self.min_proposal_tokens > 0
+    }
+
+    pub fn can_create_proposal(&self) -> bool {
+        self.active_proposal_count < Self::MAX_ACTIVE_PROPOSALS
+    }
+
+    pub fn increment_proposal(&mut self) {
+        self.proposal_count = self.proposal_count.saturating_add(1);
