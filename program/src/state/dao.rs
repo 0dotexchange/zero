@@ -53,3 +53,14 @@ impl Dao {
 
     pub fn increment_proposal(&mut self) {
         self.proposal_count = self.proposal_count.saturating_add(1);
+        self.active_proposal_count = self.active_proposal_count.saturating_add(1);
+    }
+
+    pub fn decrement_active_proposals(&mut self) {
+        self.active_proposal_count = self.active_proposal_count.saturating_sub(1);
+    }
+
+    pub fn increment_agent_count(&mut self) {
+        self.agent_count = self.agent_count.saturating_add(1);
+    }
+}
