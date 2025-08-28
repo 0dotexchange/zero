@@ -38,3 +38,23 @@ impl Proposal {
         + 32   // dao
         + 32   // proposer
         + 8    // proposal_id
+        + 4 + Self::MAX_TITLE_LEN       // title
+        + 4 + Self::MAX_DESCRIPTION_LEN // description
+        + 1    // status enum
+        + 8    // votes_for
+        + 8    // votes_against
+        + 4    // voter_count
+        + 4 + Self::MAX_PAYLOAD_LEN     // execution_payload
+        + 8    // created_at
+        + 8    // voting_ends_at
+        + 9    // finalized_at (Option<i64>)
+        + 9    // executed_at (Option<i64>)
+        + 1;   // bump
+
+    pub fn is_active(&self) -> bool {
+        self.status == ProposalStatus::Active
+    }
+
+    pub fn is_voting_open(&self, current_time: i64) -> bool {
+        self.is_active() && current_time < self.voting_ends_at
+    }
