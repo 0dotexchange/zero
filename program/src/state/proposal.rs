@@ -88,3 +88,13 @@ impl Proposal {
         self.status = if approved {
             ProposalStatus::Approved
         } else {
+            ProposalStatus::Rejected
+        };
+        self.finalized_at = Some(current_time);
+    }
+
+    pub fn mark_executed(&mut self, current_time: i64) {
+        self.status = ProposalStatus::Executed;
+        self.executed_at = Some(current_time);
+    }
+}
