@@ -58,3 +58,33 @@ impl Proposal {
     pub fn is_voting_open(&self, current_time: i64) -> bool {
         self.is_active() && current_time < self.voting_ends_at
     }
+
+    pub fn is_voting_ended(&self, current_time: i64) -> bool {
+        current_time >= self.voting_ends_at
+    }
+
+    pub fn total_votes(&self) -> u64 {
+        self.votes_for.saturating_add(self.votes_against)
+    }
+
+    pub fn approval_rate_bps(&self) -> u16 {
+        let total = self.total_votes();
+        if total == 0 {
+            return 0;
+        }
+        ((self.votes_for as u128 * 10_000) / total as u128) as u16
+    }
+
+    pub fn meets_quorum(&self, total_supply: u64, quorum_bps: u16) -> bool {
+        let required = (total_supply as u128 * quorum_bps as u128) / 10_000;
+        self.total_votes() as u128 >= required
+    }
+
+    pub fn meets_approval_threshold(&self, threshold_bps: u16) -> bool {
+        self.approval_rate_bps() >= threshold_bps
+    }
+
+    pub fn finalize(&mut self, current_time: i64, approved: bool) {
+        self.status = if approved {
+            ProposalStatus::Approved
+        } else {
