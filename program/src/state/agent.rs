@@ -63,3 +63,33 @@ impl Agent {
     pub fn has_min_reputation(&self) -> bool {
         self.reputation >= Self::MIN_REPUTATION_THRESHOLD
     }
+
+    pub fn update_reputation(&mut self, delta: i32) {
+        self.reputation = self.reputation.saturating_add(delta as i64);
+        if self.reputation < Self::MIN_REPUTATION_THRESHOLD {
+            self.status = AgentStatus::Suspended;
+        }
+    }
+
+    pub fn record_task_completion(&mut self, success: bool) {
+        if success {
+            self.tasks_completed = self.tasks_completed.saturating_add(1);
+            self.reputation = self.reputation.saturating_add(1);
+        } else {
+            self.tasks_failed = self.tasks_failed.saturating_add(1);
+            self.reputation = self.reputation.saturating_sub(2);
+        }
+    }
+
+    pub fn record_proposal_created(&mut self) {
+        self.proposals_created = self.proposals_created.saturating_add(1);
+    }
+
+    pub fn record_vote_cast(&mut self) {
+        self.votes_cast = self.votes_cast.saturating_add(1);
+    }
+
+    pub fn set_delegation(&mut self, delegate: Pubkey, weight: u64) {
+        self.delegated_to = Some(delegate);
+        self.delegated_weight = weight;
+    }
