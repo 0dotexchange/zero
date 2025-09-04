@@ -93,3 +93,17 @@ impl Agent {
         self.delegated_to = Some(delegate);
         self.delegated_weight = weight;
     }
+
+    pub fn clear_delegation(&mut self) {
+        self.delegated_to = None;
+        self.delegated_weight = 0;
+    }
+
+    pub fn success_rate(&self) -> f64 {
+        let total = self.tasks_completed + self.tasks_failed;
+        if total == 0 {
+            return 0.0;
+        }
+        self.tasks_completed as f64 / total as f64
+    }
+}
