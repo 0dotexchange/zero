@@ -68,3 +68,23 @@ impl Treasury {
         if self.recent_allocations.len() >= Self::MAX_RECENT_ALLOCATIONS {
             self.recent_allocations.remove(0);
         }
+        self.recent_allocations.push(record);
+    }
+
+    pub fn confirm_allocation(&mut self, amount: u64) {
+        self.pending_allocations = self.pending_allocations.saturating_sub(amount);
+        self.total_withdrawals = self.total_withdrawals.saturating_add(amount);
+    }
+
+    pub fn can_withdraw(&self, amount: u64) -> bool {
+        self.available_balance() >= amount
+    }
+
+    pub fn utilization_rate(&self) -> f64 {
+        if self.total_deposits == 0 {
+            return 0.0;
+        }
+        (self.total_withdrawals + self.pending_allocations) as f64
+            / self.total_deposits as f64
+    }
+}
