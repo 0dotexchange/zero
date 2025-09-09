@@ -43,3 +43,28 @@ impl Treasury {
             .saturating_sub(self.total_withdrawals)
             .saturating_sub(self.pending_allocations)
     }
+
+    pub fn record_deposit(&mut self, amount: u64, timestamp: i64) {
+        self.total_deposits = self.total_deposits.saturating_add(amount);
+        self.last_deposit_at = timestamp;
+    }
+
+    pub fn record_withdrawal(&mut self, amount: u64, timestamp: i64) {
+        self.total_withdrawals = self.total_withdrawals.saturating_add(amount);
+        self.last_withdrawal_at = timestamp;
+    }
+
+    pub fn allocate(&mut self, proposal_id: u64, amount: u64, recipient: Pubkey, timestamp: i64) {
+        self.pending_allocations = self.pending_allocations.saturating_add(amount);
+        self.allocation_count = self.allocation_count.saturating_add(1);
+
+        let record = AllocationRecord {
+            proposal_id,
+            amount,
+            recipient,
+            allocated_at: timestamp,
+        };
+
+        if self.recent_allocations.len() >= Self::MAX_RECENT_ALLOCATIONS {
+            self.recent_allocations.remove(0);
+        }
