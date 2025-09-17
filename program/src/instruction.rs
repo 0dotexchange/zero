@@ -48,3 +48,43 @@ pub enum ZeroInstruction {
     ///   1. `[]` DAO account
     ///   2. `[writable]` Proposal account (PDA)
     ///   3. `[writable]` Vote record account (PDA)
+    ///   4. `[]` Voter token account
+    ///   5. `[]` System program
+    ///   6. `[]` Clock sysvar
+    CastVote {
+        approve: bool,
+        weight: u64,
+    },
+
+    /// Finalize a proposal after the voting period ends
+    /// Accounts:
+    ///   0. `[signer]` Caller
+    ///   1. `[writable]` DAO account
+    ///   2. `[writable]` Proposal account (PDA)
+    ///   3. `[]` Clock sysvar
+    FinalizeProposal,
+
+    /// Execute an approved proposal
+    /// Accounts:
+    ///   0. `[signer]` Authority or executor
+    ///   1. `[writable]` DAO account
+    ///   2. `[writable]` Proposal account (PDA)
+    ///   3. `[writable]` Treasury account (PDA)
+    ExecuteProposal,
+
+    /// Register an AGI agent with the DAO
+    /// Accounts:
+    ///   0. `[writable, signer]` Agent owner
+    ///   1. `[]` DAO account
+    ///   2. `[writable]` Agent account (PDA)
+    ///   3. `[]` System program
+    RegisterAgent {
+        agent_name: String,
+        capabilities: Vec<String>,
+    },
+
+    /// Update an agent's reputation score
+    /// Accounts:
+    ///   0. `[signer]` DAO authority
+    ///   1. `[]` DAO account
+    ///   2. `[writable]` Agent account (PDA)
