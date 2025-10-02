@@ -88,3 +88,43 @@ pub enum ZeroInstruction {
     ///   0. `[signer]` DAO authority
     ///   1. `[]` DAO account
     ///   2. `[writable]` Agent account (PDA)
+    UpdateAgentReputation {
+        delta: i32,
+        reason: String,
+    },
+
+    /// Deposit tokens into the DAO treasury
+    /// Accounts:
+    ///   0. `[writable, signer]` Depositor
+    ///   1. `[]` DAO account
+    ///   2. `[writable]` Treasury account (PDA)
+    ///   3. `[writable]` Depositor token account
+    ///   4. `[writable]` Treasury token account
+    ///   5. `[]` Token program
+    DepositTreasury {
+        amount: u64,
+    },
+
+    /// Withdraw tokens from the DAO treasury
+    /// Accounts:
+    ///   0. `[signer]` DAO authority
+    ///   1. `[]` DAO account
+    ///   2. `[writable]` Treasury account (PDA)
+    ///   3. `[writable]` Destination token account
+    ///   4. `[writable]` Treasury token account
+    ///   5. `[]` Token program
+    WithdrawTreasury {
+        amount: u64,
+    },
+
+    /// Delegate voting power to another address
+    /// Accounts:
+    ///   0. `[writable, signer]` Delegator
+    ///   1. `[]` DAO account
+    ///   2. `[writable]` Delegator agent account (PDA)
+    DelegateVotingPower {
+        delegate_to: Pubkey,
+        weight: u64,
+    },
+}
+
