@@ -128,3 +128,18 @@ pub enum ZeroInstruction {
     },
 }
 
+impl ZeroInstruction {
+    pub fn initialize_dao(
+        program_id: &Pubkey,
+        authority: &Pubkey,
+        dao_pda: &Pubkey,
+        treasury_pda: &Pubkey,
+        token_mint: &Pubkey,
+        name: String,
+        quorum_bps: u16,
+        approval_threshold_bps: u16,
+        voting_period: i64,
+        min_proposal_tokens: u64,
+        min_vote_tokens: u64,
+    ) -> Instruction {
+        let data = ZeroInstruction::InitializeDao {
