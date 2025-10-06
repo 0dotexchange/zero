@@ -143,3 +143,43 @@ impl ZeroInstruction {
         min_vote_tokens: u64,
     ) -> Instruction {
         let data = ZeroInstruction::InitializeDao {
+            name,
+            quorum_bps,
+            approval_threshold_bps,
+            voting_period,
+            min_proposal_tokens,
+            min_vote_tokens,
+        };
+        Instruction::new_with_borsh(
+            *program_id,
+            &data,
+            vec![
+                AccountMeta::new(*authority, true),
+                AccountMeta::new(*dao_pda, false),
+                AccountMeta::new(*treasury_pda, false),
+                AccountMeta::new_readonly(*token_mint, false),
+                AccountMeta::new_readonly(system_program::id(), false),
+                AccountMeta::new_readonly(sysvar::rent::id(), false),
+            ],
+        )
+    }
+
+    pub fn create_proposal(
+        program_id: &Pubkey,
+        proposer: &Pubkey,
+        dao_pda: &Pubkey,
+        proposal_pda: &Pubkey,
+        proposer_token_account: &Pubkey,
+        title: String,
+        description: String,
+        execution_payload: Vec<u8>,
+    ) -> Instruction {
+        let data = ZeroInstruction::CreateProposal {
+            title,
+            description,
+            execution_payload,
+        };
+        Instruction::new_with_borsh(
+            *program_id,
+            &data,
+            vec![
