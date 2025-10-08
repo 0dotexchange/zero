@@ -183,3 +183,38 @@ impl ZeroInstruction {
             *program_id,
             &data,
             vec![
+                AccountMeta::new(*proposer, true),
+                AccountMeta::new(*dao_pda, false),
+                AccountMeta::new(*proposal_pda, false),
+                AccountMeta::new_readonly(*proposer_token_account, false),
+                AccountMeta::new_readonly(system_program::id(), false),
+                AccountMeta::new_readonly(sysvar::clock::id(), false),
+            ],
+        )
+    }
+
+    pub fn cast_vote(
+        program_id: &Pubkey,
+        voter: &Pubkey,
+        dao_pda: &Pubkey,
+        proposal_pda: &Pubkey,
+        vote_record_pda: &Pubkey,
+        voter_token_account: &Pubkey,
+        approve: bool,
+        weight: u64,
+    ) -> Instruction {
+        let data = ZeroInstruction::CastVote { approve, weight };
+        Instruction::new_with_borsh(
+            *program_id,
+            &data,
+            vec![
+                AccountMeta::new(*voter, true),
+                AccountMeta::new_readonly(*dao_pda, false),
+                AccountMeta::new(*proposal_pda, false),
+                AccountMeta::new(*vote_record_pda, false),
+                AccountMeta::new_readonly(*voter_token_account, false),
+                AccountMeta::new_readonly(system_program::id(), false),
+                AccountMeta::new_readonly(sysvar::clock::id(), false),
+            ],
+        )
+    }
