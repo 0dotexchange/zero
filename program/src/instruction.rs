@@ -253,3 +253,28 @@ impl ZeroInstruction {
         token_program: &Pubkey,
         amount: u64,
     ) -> Instruction {
+        let data = ZeroInstruction::DepositTreasury { amount };
+        Instruction::new_with_borsh(
+            *program_id,
+            &data,
+            vec![
+                AccountMeta::new(*depositor, true),
+                AccountMeta::new_readonly(*dao_pda, false),
+                AccountMeta::new(*treasury_pda, false),
+                AccountMeta::new(*depositor_token_account, true),
+                AccountMeta::new(*treasury_token_account, false),
+                AccountMeta::new_readonly(*token_program, false),
+            ],
+        )
+    }
+
+    pub fn delegate_voting_power(
+        program_id: &Pubkey,
+        delegator: &Pubkey,
+        dao_pda: &Pubkey,
+        agent_pda: &Pubkey,
+        delegate_to: Pubkey,
+        weight: u64,
+    ) -> Instruction {
+        let data = ZeroInstruction::DelegateVotingPower {
+            delegate_to,
