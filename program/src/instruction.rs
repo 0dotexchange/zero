@@ -218,3 +218,38 @@ impl ZeroInstruction {
             ],
         )
     }
+
+    pub fn register_agent(
+        program_id: &Pubkey,
+        owner: &Pubkey,
+        dao_pda: &Pubkey,
+        agent_pda: &Pubkey,
+        agent_name: String,
+        capabilities: Vec<String>,
+    ) -> Instruction {
+        let data = ZeroInstruction::RegisterAgent {
+            agent_name,
+            capabilities,
+        };
+        Instruction::new_with_borsh(
+            *program_id,
+            &data,
+            vec![
+                AccountMeta::new(*owner, true),
+                AccountMeta::new_readonly(*dao_pda, false),
+                AccountMeta::new(*agent_pda, false),
+                AccountMeta::new_readonly(system_program::id(), false),
+            ],
+        )
+    }
+
+    pub fn deposit_treasury(
+        program_id: &Pubkey,
+        depositor: &Pubkey,
+        dao_pda: &Pubkey,
+        treasury_pda: &Pubkey,
+        depositor_token_account: &Pubkey,
+        treasury_token_account: &Pubkey,
+        token_program: &Pubkey,
+        amount: u64,
+    ) -> Instruction {
