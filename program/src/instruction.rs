@@ -278,3 +278,16 @@ impl ZeroInstruction {
     ) -> Instruction {
         let data = ZeroInstruction::DelegateVotingPower {
             delegate_to,
+            weight,
+        };
+        Instruction::new_with_borsh(
+            *program_id,
+            &data,
+            vec![
+                AccountMeta::new(*delegator, true),
+                AccountMeta::new_readonly(*dao_pda, false),
+                AccountMeta::new(*agent_pda, false),
+            ],
+        )
+    }
+}
