@@ -1,3 +1,7 @@
 pub mod entrypoint;
+pub mod error;
+pub mod instruction;
+pub mod state;
+pub mod utils;
 
 solana_program::declare_id!("ZER0DAO1111111111111111111111111111111111111");
