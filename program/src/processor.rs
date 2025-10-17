@@ -113,3 +113,28 @@ impl Processor {
                 Self::process_delegate_voting_power(program_id, accounts, delegate_to, weight)
             }
         }
+    }
+
+    fn create_pda_account<'a>(
+        payer: &AccountInfo<'a>,
+        space: usize,
+        owner: &Pubkey,
+        system_program: &AccountInfo<'a>,
+        new_account: &AccountInfo<'a>,
+        seeds: &[&[u8]],
+    ) -> ProgramResult {
+        let rent = Rent::get()?;
+        let lamports = rent.minimum_balance(space);
+
+        invoke_signed(
+            &system_instruction::create_account(
+                payer.key,
+                new_account.key,
+                lamports,
+                space as u64,
+                owner,
+            ),
+            &[payer.clone(), new_account.clone(), system_program.clone()],
+            &[seeds],
+        )
+    }
