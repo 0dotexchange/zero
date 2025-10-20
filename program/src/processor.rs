@@ -138,3 +138,83 @@ impl Processor {
             &[seeds],
         )
     }
+
+    fn process_initialize_dao(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        name: String,
+        quorum_bps: u16,
+        approval_threshold_bps: u16,
+        voting_period: i64,
+        min_proposal_tokens: u64,
+        min_vote_tokens: u64,
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let authority = next_account_info(account_iter)?;
+        let dao_account = next_account_info(account_iter)?;
+        let treasury_account = next_account_info(account_iter)?;
+        let token_mint = next_account_info(account_iter)?;
+        let system_program = next_account_info(account_iter)?;
+
+        if !authority.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let (dao_pda, dao_bump) = find_dao_address(program_id, &name);
+        if dao_pda != *dao_account.key {
+            return Err(ZeroError::InvalidPDA.into());
+        }
+
+        let (treasury_pda, treasury_bump) = find_treasury_address(program_id, &dao_pda);
+        if treasury_pda != *treasury_account.key {
+            return Err(ZeroError::InvalidPDA.into());
+        }
+
+        let clock = Clock::get()?;
+
+        let dao_seeds = &[DAO_SEED, name.as_bytes(), &[dao_bump]];
+        Self::create_pda_account(
+            authority,
+            Dao::SPACE,
+            program_id,
+            system_program,
+            dao_account,
+            dao_seeds,
+        )?;
+
+        let dao = Dao {
+            is_initialized: true,
+            authority: *authority.key,
+            name: name.clone(),
+            token_mint: *token_mint.key,
+            quorum_bps,
+            approval_threshold_bps,
+            voting_period,
+            min_proposal_tokens,
+            min_vote_tokens,
+            proposal_count: 0,
+            active_proposal_count: 0,
+            agent_count: 0,
+            total_delegated_weight: 0,
+            created_at: clock.unix_timestamp,
+            bump: dao_bump,
+        };
+
+        if !dao.validate_config() {
+            return Err(ZeroError::InvalidInstruction.into());
+        }
+
+        borsh::to_writer(&mut dao_account.data.borrow_mut()[..], &dao)?;
+
+        let treasury_seeds = &[TREASURY_SEED, dao_pda.as_ref(), &[treasury_bump]];
+        Self::create_pda_account(
+            authority,
+            Treasury::SPACE,
+            program_id,
+            system_program,
+            treasury_account,
+            treasury_seeds,
+        )?;
+
+        let treasury = Treasury {
+            is_initialized: true,
