@@ -218,3 +218,73 @@ impl Processor {
 
         let treasury = Treasury {
             is_initialized: true,
+            dao: dao_pda,
+            token_mint: *token_mint.key,
+            total_deposits: 0,
+            total_withdrawals: 0,
+            pending_allocations: 0,
+            allocation_count: 0,
+            recent_allocations: Vec::new(),
+            last_deposit_at: 0,
+            last_withdrawal_at: 0,
+            bump: treasury_bump,
+        };
+
+        borsh::to_writer(&mut treasury_account.data.borrow_mut()[..], &treasury)?;
+
+        msg!("DAO '{}' initialized successfully", name);
+        Ok(())
+    }
+
+    fn process_create_proposal(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        title: String,
+        description: String,
+        execution_payload: Vec<u8>,
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let proposer = next_account_info(account_iter)?;
+        let dao_account = next_account_info(account_iter)?;
+        let proposal_account = next_account_info(account_iter)?;
+        let _proposer_token_account = next_account_info(account_iter)?;
+        let system_program = next_account_info(account_iter)?;
+
+        if !proposer.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        if !validate_string_length(&title, MAX_PROPOSAL_TITLE_LEN) {
+            return Err(ZeroError::InvalidInstruction.into());
+        }
+
+        if !validate_string_length(&description, MAX_PROPOSAL_DESC_LEN) {
+            return Err(ZeroError::InvalidInstruction.into());
+        }
+
+        let mut dao: Dao = Dao::try_from_slice(&dao_account.data.borrow())?;
+        if !dao.is_initialized {
+            return Err(ZeroError::UninitializedAccount.into());
+        }
+
+        if !dao.can_create_proposal() {
+            return Err(ZeroError::MaxProposalsReached.into());
+        }
+
+        let proposal_id = dao.proposal_count;
+        let (proposal_pda, proposal_bump) =
+            find_proposal_address(program_id, dao_account.key, proposal_id);
+        if proposal_pda != *proposal_account.key {
+            return Err(ZeroError::InvalidPDA.into());
+        }
+
+        let clock = Clock::get()?;
+        let voting_ends_at = clock
+            .unix_timestamp
+            .checked_add(dao.voting_period)
+            .ok_or(ZeroError::Overflow)?;
+
+        let proposal_seeds = &[
+            PROPOSAL_SEED,
+            dao_account.key.as_ref(),
+            &proposal_id.to_le_bytes(),
