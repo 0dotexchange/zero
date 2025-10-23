@@ -288,3 +288,83 @@ impl Processor {
             PROPOSAL_SEED,
             dao_account.key.as_ref(),
             &proposal_id.to_le_bytes(),
+            &[proposal_bump],
+        ];
+        Self::create_pda_account(
+            proposer,
+            Proposal::SPACE,
+            program_id,
+            system_program,
+            proposal_account,
+            proposal_seeds,
+        )?;
+
+        let proposal = Proposal {
+            is_initialized: true,
+            dao: *dao_account.key,
+            proposer: *proposer.key,
+            proposal_id,
+            title,
+            description,
+            status: ProposalStatus::Active,
+            votes_for: 0,
+            votes_against: 0,
+            voter_count: 0,
+            execution_payload,
+            created_at: clock.unix_timestamp,
+            voting_ends_at,
+            finalized_at: None,
+            executed_at: None,
+            bump: proposal_bump,
+        };
+
+        borsh::to_writer(&mut proposal_account.data.borrow_mut()[..], &proposal)?;
+
+        dao.increment_proposal();
+        borsh::to_writer(&mut dao_account.data.borrow_mut()[..], &dao)?;
+
+        msg!("Proposal {} created", proposal_id);
+        Ok(())
+    }
+
+    fn process_cast_vote(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        approve: bool,
+        weight: u64,
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let voter = next_account_info(account_iter)?;
+        let _dao_account = next_account_info(account_iter)?;
+        let proposal_account = next_account_info(account_iter)?;
+        let vote_record_account = next_account_info(account_iter)?;
+        let _voter_token_account = next_account_info(account_iter)?;
+        let system_program = next_account_info(account_iter)?;
+
+        if !voter.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        if weight == 0 {
+            return Err(ZeroError::InvalidVoteWeight.into());
+        }
+
+        let mut proposal: Proposal =
+            Proposal::try_from_slice(&proposal_account.data.borrow())?;
+        if !proposal.is_initialized {
+            return Err(ZeroError::UninitializedAccount.into());
+        }
+
+        let clock = Clock::get()?;
+        if !proposal.is_voting_open(clock.unix_timestamp) {
+            return Err(ZeroError::VotingPeriodEnded.into());
+        }
+
+        let (vote_pda, vote_bump) =
+            find_vote_record_address(program_id, proposal_account.key, voter.key);
+        if vote_pda != *vote_record_account.key {
+            return Err(ZeroError::InvalidPDA.into());
+        }
+
+        if vote_record_account.data_len() > 0 {
+            let existing: VoteRecord =
