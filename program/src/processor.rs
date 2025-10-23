@@ -368,3 +368,48 @@ impl Processor {
 
         if vote_record_account.data_len() > 0 {
             let existing: VoteRecord =
+                VoteRecord::try_from_slice(&vote_record_account.data.borrow())?;
+            if existing.is_initialized {
+                return Err(ZeroError::AlreadyVoted.into());
+            }
+        }
+
+        let vote_seeds = &[
+            VOTE_RECORD_SEED,
+            proposal_account.key.as_ref(),
+            voter.key.as_ref(),
+            &[vote_bump],
+        ];
+        Self::create_pda_account(
+            voter,
+            VoteRecord::SPACE,
+            program_id,
+            system_program,
+            vote_record_account,
+            vote_seeds,
+        )?;
+
+        let vote_record = VoteRecord {
+            is_initialized: true,
+            proposal: *proposal_account.key,
+            voter: *voter.key,
+            approved: approve,
+            weight,
+            delegated_from: None,
+            voted_at: clock.unix_timestamp,
+            bump: vote_bump,
+        };
+
+        borsh::to_writer(&mut vote_record_account.data.borrow_mut()[..], &vote_record)?;
+
+        if approve {
+            proposal.votes_for = proposal.votes_for.saturating_add(weight);
+        } else {
+            proposal.votes_against = proposal.votes_against.saturating_add(weight);
+        }
+        proposal.voter_count = proposal.voter_count.saturating_add(1);
+
+        borsh::to_writer(&mut proposal_account.data.borrow_mut()[..], &proposal)?;
+
+        msg!(
+            "Vote cast: {} with weight {}",
