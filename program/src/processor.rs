@@ -413,3 +413,43 @@ impl Processor {
 
         msg!(
             "Vote cast: {} with weight {}",
+            if approve { "approve" } else { "reject" },
+            weight
+        );
+        Ok(())
+    }
+
+    fn process_finalize_proposal(
+        _program_id: &Pubkey,
+        accounts: &[AccountInfo],
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let caller = next_account_info(account_iter)?;
+        let dao_account = next_account_info(account_iter)?;
+        let proposal_account = next_account_info(account_iter)?;
+
+        if !caller.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let mut dao: Dao = Dao::try_from_slice(&dao_account.data.borrow())?;
+        let mut proposal: Proposal =
+            Proposal::try_from_slice(&proposal_account.data.borrow())?;
+
+        if !proposal.is_active() {
+            return Err(ZeroError::ProposalNotActive.into());
+        }
+
+        let clock = Clock::get()?;
+        let finalization_time = proposal
+            .voting_ends_at
+            .checked_add(GRACE_PERIOD)
+            .ok_or(ZeroError::Overflow)?;
+
+        if clock.unix_timestamp < finalization_time {
+            return Err(ZeroError::VotingPeriodNotEnded.into());
+        }
+
+        let approved = proposal.meets_approval_threshold(dao.approval_threshold_bps);
+
+        proposal.finalize(clock.unix_timestamp, approved);
