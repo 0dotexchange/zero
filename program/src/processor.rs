@@ -453,3 +453,73 @@ impl Processor {
         let approved = proposal.meets_approval_threshold(dao.approval_threshold_bps);
 
         proposal.finalize(clock.unix_timestamp, approved);
+        dao.decrement_active_proposals();
+
+        borsh::to_writer(&mut proposal_account.data.borrow_mut()[..], &proposal)?;
+        borsh::to_writer(&mut dao_account.data.borrow_mut()[..], &dao)?;
+
+        msg!(
+            "Proposal {} finalized: {}",
+            proposal.proposal_id,
+            if approved { "approved" } else { "rejected" }
+        );
+        Ok(())
+    }
+
+    fn process_execute_proposal(
+        _program_id: &Pubkey,
+        accounts: &[AccountInfo],
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let authority = next_account_info(account_iter)?;
+        let dao_account = next_account_info(account_iter)?;
+        let proposal_account = next_account_info(account_iter)?;
+        let _treasury_account = next_account_info(account_iter)?;
+
+        if !authority.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let dao: Dao = Dao::try_from_slice(&dao_account.data.borrow())?;
+        if dao.authority != *authority.key {
+            return Err(ZeroError::InvalidAuthority.into());
+        }
+
+        let mut proposal: Proposal =
+            Proposal::try_from_slice(&proposal_account.data.borrow())?;
+        if proposal.status != ProposalStatus::Approved {
+            return Err(ZeroError::ProposalNotActive.into());
+        }
+
+        if proposal.execution_payload.is_empty() {
+            return Err(ZeroError::InvalidExecutionPayload.into());
+        }
+
+        let clock = Clock::get()?;
+        proposal.mark_executed(clock.unix_timestamp);
+        borsh::to_writer(&mut proposal_account.data.borrow_mut()[..], &proposal)?;
+
+        msg!("Proposal {} executed", proposal.proposal_id);
+        Ok(())
+    }
+
+    fn process_register_agent(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        agent_name: String,
+        capabilities: Vec<String>,
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let owner = next_account_info(account_iter)?;
+        let dao_account = next_account_info(account_iter)?;
+        let agent_account = next_account_info(account_iter)?;
+        let system_program = next_account_info(account_iter)?;
+
+        if !owner.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        if !validate_string_length(&agent_name, MAX_AGENT_NAME_LEN) {
+            return Err(ZeroError::InvalidInstruction.into());
+        }
+
