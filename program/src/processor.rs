@@ -523,3 +523,38 @@ impl Processor {
             return Err(ZeroError::InvalidInstruction.into());
         }
 
+        let mut dao: Dao = Dao::try_from_slice(&dao_account.data.borrow())?;
+        if !dao.is_initialized {
+            return Err(ZeroError::UninitializedAccount.into());
+        }
+
+        let (agent_pda, agent_bump) =
+            find_agent_address(program_id, dao_account.key, owner.key);
+        if agent_pda != *agent_account.key {
+            return Err(ZeroError::InvalidPDA.into());
+        }
+
+        let clock = Clock::get()?;
+
+        let agent_seeds = &[
+            AGENT_SEED,
+            dao_account.key.as_ref(),
+            owner.key.as_ref(),
+            &[agent_bump],
+        ];
+        Self::create_pda_account(
+            owner,
+            Agent::SPACE,
+            program_id,
+            system_program,
+            agent_account,
+            agent_seeds,
+        )?;
+
+        let parsed_capabilities: Vec<AgentCapability> = capabilities
+            .into_iter()
+            .take(Agent::MAX_CAPABILITIES)
+            .map(|name| AgentCapability { name, version: 1 })
+            .collect();
+
+        let agent = Agent {
