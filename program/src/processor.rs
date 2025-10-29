@@ -558,3 +558,63 @@ impl Processor {
             .collect();
 
         let agent = Agent {
+            is_initialized: true,
+            dao: *dao_account.key,
+            owner: *owner.key,
+            agent_name,
+            status: AgentStatus::Active,
+            reputation: 0,
+            tasks_completed: 0,
+            tasks_failed: 0,
+            proposals_created: 0,
+            votes_cast: 0,
+            capabilities: parsed_capabilities,
+            delegated_to: None,
+            delegated_weight: 0,
+            registered_at: clock.unix_timestamp,
+            last_active_at: clock.unix_timestamp,
+            bump: agent_bump,
+        };
+
+        borsh::to_writer(&mut agent_account.data.borrow_mut()[..], &agent)?;
+
+        dao.increment_agent_count();
+        borsh::to_writer(&mut dao_account.data.borrow_mut()[..], &dao)?;
+
+        msg!("Agent registered: {}", agent.agent_name);
+        Ok(())
+    }
+
+    fn process_update_agent_reputation(
+        _program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        delta: i32,
+        reason: String,
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let authority = next_account_info(account_iter)?;
+        let dao_account = next_account_info(account_iter)?;
+        let agent_account = next_account_info(account_iter)?;
+
+        if !authority.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let dao: Dao = Dao::try_from_slice(&dao_account.data.borrow())?;
+        if dao.authority != *authority.key {
+            return Err(ZeroError::InvalidAuthority.into());
+        }
+
+        let mut agent: Agent = Agent::try_from_slice(&agent_account.data.borrow())?;
+        if !agent.is_initialized {
+            return Err(ZeroError::AgentNotRegistered.into());
+        }
+
+        let prev_reputation = agent.reputation;
+        agent.update_reputation(delta);
+
+        let clock = Clock::get()?;
+        agent.last_active_at = clock.unix_timestamp;
+
+        borsh::to_writer(&mut agent_account.data.borrow_mut()[..], &agent)?;
+
