@@ -618,3 +618,140 @@ impl Processor {
 
         borsh::to_writer(&mut agent_account.data.borrow_mut()[..], &agent)?;
 
+        msg!(
+            "Agent reputation updated: {} -> {} (reason: {})",
+            prev_reputation,
+            agent.reputation,
+            reason
+        );
+        Ok(())
+    }
+
+    fn process_deposit_treasury(
+        _program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        amount: u64,
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let depositor = next_account_info(account_iter)?;
+        let _dao_account = next_account_info(account_iter)?;
+        let treasury_account = next_account_info(account_iter)?;
+        let _depositor_token_account = next_account_info(account_iter)?;
+        let _treasury_token_account = next_account_info(account_iter)?;
+        let _token_program = next_account_info(account_iter)?;
+
+        if !depositor.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        if amount == 0 {
+            return Err(ZeroError::InvalidInstruction.into());
+        }
+
+        let mut treasury: Treasury =
+            Treasury::try_from_slice(&treasury_account.data.borrow())?;
+        if !treasury.is_initialized {
+            return Err(ZeroError::UninitializedAccount.into());
+        }
+
+        let clock = Clock::get()?;
+        treasury.record_deposit(amount, clock.unix_timestamp);
+
+        borsh::to_writer(&mut treasury_account.data.borrow_mut()[..], &treasury)?;
+
+        msg!("Treasury deposit: {} tokens", amount);
+        Ok(())
+    }
+
+    fn process_withdraw_treasury(
+        _program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        amount: u64,
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let authority = next_account_info(account_iter)?;
+        let dao_account = next_account_info(account_iter)?;
+        let treasury_account = next_account_info(account_iter)?;
+        let _dest_token_account = next_account_info(account_iter)?;
+        let _treasury_token_account = next_account_info(account_iter)?;
+        let _token_program = next_account_info(account_iter)?;
+
+        if !authority.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let dao: Dao = Dao::try_from_slice(&dao_account.data.borrow())?;
+        if dao.authority != *authority.key {
+            return Err(ZeroError::InvalidAuthority.into());
+        }
+
+        let mut treasury: Treasury =
+            Treasury::try_from_slice(&treasury_account.data.borrow())?;
+        if !treasury.can_withdraw(amount) {
+            return Err(ZeroError::InsufficientTreasuryFunds.into());
+        }
+
+        let clock = Clock::get()?;
+        treasury.record_withdrawal(amount, clock.unix_timestamp);
+
+        borsh::to_writer(&mut treasury_account.data.borrow_mut()[..], &treasury)?;
+
+        msg!("Treasury withdrawal: {} tokens", amount);
+        Ok(())
+    }
+
+    fn process_delegate_voting_power(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        delegate_to: Pubkey,
+        weight: u64,
+    ) -> ProgramResult {
+        let account_iter = &mut accounts.iter();
+        let delegator = next_account_info(account_iter)?;
+        let dao_account = next_account_info(account_iter)?;
+        let agent_account = next_account_info(account_iter)?;
+
+        if !delegator.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        if *delegator.key == delegate_to {
+            return Err(ZeroError::InvalidDelegation.into());
+        }
+
+        let mut agent: Agent = Agent::try_from_slice(&agent_account.data.borrow())?;
+        if !agent.is_initialized {
+            return Err(ZeroError::AgentNotRegistered.into());
+        }
+
+        if agent.owner != *delegator.key {
+            return Err(ZeroError::InvalidAuthority.into());
+        }
+
+        let (expected_agent, _) =
+            find_agent_address(program_id, dao_account.key, delegator.key);
+        if expected_agent != *agent_account.key {
+            return Err(ZeroError::InvalidPDA.into());
+        }
+
+        let mut dao: Dao = Dao::try_from_slice(&dao_account.data.borrow())?;
+
+        if let Some(_prev) = agent.delegated_to {
+            dao.total_delegated_weight = dao
+                .total_delegated_weight
+                .saturating_sub(agent.delegated_weight);
+        }
+
+        agent.set_delegation(delegate_to, weight);
+        dao.total_delegated_weight = dao.total_delegated_weight.saturating_add(weight);
+
+        let clock = Clock::get()?;
+        agent.last_active_at = clock.unix_timestamp;
+
+        borsh::to_writer(&mut agent_account.data.borrow_mut()[..], &agent)?;
+        borsh::to_writer(&mut dao_account.data.borrow_mut()[..], &dao)?;
+
+        msg!("Voting power delegated: {} weight to {}", weight, delegate_to);
+        Ok(())
+    }
+}
