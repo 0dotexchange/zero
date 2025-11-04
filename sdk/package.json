@@ -1,0 +1,22 @@
+{
+  "name": "@zero/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for interacting with the Zero AGI DAO governance protocol on Solana",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0",
+    "borsh": "^2.0.0",
+    "bn.js": "^5.2.1",
+    "bs58": "^5.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/bn.js": "^5.1.5"
+  },
+  "license": "Apache-2.0"
+}
