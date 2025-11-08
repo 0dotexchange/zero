@@ -33,3 +33,23 @@ export enum AgentStatus {
   Suspended = 1,
   Deregistered = 2,
 }
+
+export interface DaoAccount {
+  isInitialized: boolean;
+  authority: PublicKey;
+  name: string;
+  tokenMint: PublicKey;
+  quorumBps: number;
+  approvalThresholdBps: number;
+  votingPeriod: bigint;
+  minProposalTokens: bigint;
+  minVoteTokens: bigint;
+  proposalCount: bigint;
+  activeProposalCount: number;
+  agentCount: bigint;
+  totalDelegatedWeight: bigint;
+  createdAt: bigint;
+  bump: number;
+}
+
+export interface ProposalAccount {
