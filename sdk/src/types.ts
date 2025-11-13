@@ -53,3 +53,33 @@ export interface DaoAccount {
 }
 
 export interface ProposalAccount {
+  isInitialized: boolean;
+  dao: PublicKey;
+  proposer: PublicKey;
+  proposalId: bigint;
+  title: string;
+  description: string;
+  status: ProposalStatus;
+  votesFor: bigint;
+  votesAgainst: bigint;
+  voterCount: number;
+  executionPayload: Uint8Array;
+  createdAt: bigint;
+  votingEndsAt: bigint;
+  finalizedAt: bigint | null;
+  executedAt: bigint | null;
+  bump: number;
+}
+
+export interface AgentCapability {
+  name: string;
+  version: number;
+}
+
+export interface AgentAccount {
+  isInitialized: boolean;
+  dao: PublicKey;
+  owner: PublicKey;
+  agentName: string;
+  status: AgentStatus;
+  reputation: bigint;
