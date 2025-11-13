@@ -83,3 +83,38 @@ export interface AgentAccount {
   agentName: string;
   status: AgentStatus;
   reputation: bigint;
+  tasksCompleted: bigint;
+  tasksFailed: bigint;
+  proposalsCreated: number;
+  votesCast: number;
+  capabilities: AgentCapability[];
+  delegatedTo: PublicKey | null;
+  delegatedWeight: bigint;
+  registeredAt: bigint;
+  lastActiveAt: bigint;
+  bump: number;
+}
+
+export interface AllocationRecord {
+  proposalId: bigint;
+  amount: bigint;
+  recipient: PublicKey;
+  allocatedAt: bigint;
+}
+
+export interface TreasuryAccount {
+  isInitialized: boolean;
+  dao: PublicKey;
+  tokenMint: PublicKey;
+  totalDeposits: bigint;
+  totalWithdrawals: bigint;
+  pendingAllocations: bigint;
+  allocationCount: number;
+  recentAllocations: AllocationRecord[];
+  lastDepositAt: bigint;
+  lastWithdrawalAt: bigint;
+  bump: number;
+}
+
+export interface VoteRecordAccount {
+  isInitialized: boolean;
