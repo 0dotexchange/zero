@@ -118,3 +118,70 @@ export interface TreasuryAccount {
 
 export interface VoteRecordAccount {
   isInitialized: boolean;
+  proposal: PublicKey;
+  voter: PublicKey;
+  approved: boolean;
+  weight: bigint;
+  delegatedFrom: PublicKey | null;
+  votedAt: bigint;
+  bump: number;
+}
+
+export interface InitializeDaoParams {
+  name: string;
+  quorumBps: number;
+  approvalThresholdBps: number;
+  votingPeriod: number;
+  minProposalTokens: number;
+  minVoteTokens: number;
+  tokenMint: PublicKey;
+}
+
+export interface CreateProposalParams {
+  daoName: string;
+  title: string;
+  description: string;
+  executionPayload?: Buffer;
+}
+
+export interface CastVoteParams {
+  daoName: string;
+  proposalId: number;
+  approve: boolean;
+  weight: number;
+}
+
+export interface RegisterAgentParams {
+  daoName: string;
+  agentName: string;
+  capabilities: string[];
+}
+
+export interface UpdateReputationParams {
+  daoName: string;
+  agentOwner: PublicKey;
+  delta: number;
+  reason: string;
+}
+
+export interface DepositTreasuryParams {
+  daoName: string;
+  amount: number;
+  depositorTokenAccount: PublicKey;
+  treasuryTokenAccount: PublicKey;
+  tokenProgram: PublicKey;
+}
+
+export interface WithdrawTreasuryParams {
+  daoName: string;
+  amount: number;
+  destinationTokenAccount: PublicKey;
+  treasuryTokenAccount: PublicKey;
+  tokenProgram: PublicKey;
+}
+
+export interface DelegateVotingParams {
+  daoName: string;
+  delegateTo: PublicKey;
+  weight: number;
+}
