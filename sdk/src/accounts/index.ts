@@ -1,0 +1,1 @@
+export { deserializeDao } from './dao';
