@@ -53,3 +53,68 @@ export class ZeroClient {
     this.connection = new Connection(endpoint, this.config.commitment);
   }
 
+  get programId(): PublicKey {
+    return this.config.programId;
+  }
+
+  async initializeDao(
+    payer: Keypair,
+    params: InitializeDaoParams
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(params.name, this.programId);
+    const [treasuryPda] = findTreasuryAddress(daoPda, this.programId);
+
+    const instruction = createInitializeDaoInstruction(
+      payer.publicKey,
+      daoPda,
+      treasuryPda,
+      params.tokenMint,
+      params.name,
+      params.quorumBps,
+      params.approvalThresholdBps,
+      params.votingPeriod,
+      params.minProposalTokens,
+      params.minVoteTokens,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [payer]);
+  }
+
+  async createProposal(
+    proposer: Keypair,
+    params: CreateProposalParams
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(params.daoName, this.programId);
+    const dao = await this.getDao(params.daoName);
+
+    const proposalId = Number(dao.proposalCount);
+    const [proposalPda] = findProposalAddress(daoPda, proposalId, this.programId);
+
+    const proposerTokenAccount = await this.findAssociatedTokenAccount(
+      proposer.publicKey,
+      dao.tokenMint
+    );
+
+    const instruction = createCreateProposalInstruction(
+      proposer.publicKey,
+      daoPda,
+      proposalPda,
+      proposerTokenAccount,
+      params.title,
+      params.description,
+      params.executionPayload || Buffer.alloc(0),
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [proposer]);
+  }
+
+  async castVote(
+    voter: Keypair,
+    params: CastVoteParams
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(params.daoName, this.programId);
+    const [proposalPda] = findProposalAddress(daoPda, params.proposalId, this.programId);
