@@ -118,3 +118,53 @@ export class ZeroClient {
   ): Promise<string> {
     const [daoPda] = findDaoAddress(params.daoName, this.programId);
     const [proposalPda] = findProposalAddress(daoPda, params.proposalId, this.programId);
+    const [voteRecordPda] = findVoteRecordAddress(proposalPda, voter.publicKey, this.programId);
+
+    const dao = await this.getDao(params.daoName);
+    const voterTokenAccount = await this.findAssociatedTokenAccount(
+      voter.publicKey,
+      dao.tokenMint
+    );
+
+    const instruction = createCastVoteInstruction(
+      voter.publicKey,
+      daoPda,
+      proposalPda,
+      voteRecordPda,
+      voterTokenAccount,
+      params.approve,
+      params.weight,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [voter]);
+  }
+
+  async finalizeProposal(
+    caller: Keypair,
+    daoName: string,
+    proposalId: number
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(daoName, this.programId);
+    const [proposalPda] = findProposalAddress(daoPda, proposalId, this.programId);
+
+    const instruction = createFinalizeProposalInstruction(
+      caller.publicKey,
+      daoPda,
+      proposalPda,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [caller]);
+  }
+
+  async executeProposal(
+    authority: Keypair,
+    daoName: string,
+    proposalId: number
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(daoName, this.programId);
+    const [proposalPda] = findProposalAddress(daoPda, proposalId, this.programId);
+    const [treasuryPda] = findTreasuryAddress(daoPda, this.programId);
