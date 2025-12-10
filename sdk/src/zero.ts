@@ -273,3 +273,38 @@ export class ZeroClient {
     const [agentPda] = findAgentAddress(daoPda, delegator.publicKey, this.programId);
 
     const instruction = createDelegateVotingPowerInstruction(
+      delegator.publicKey,
+      daoPda,
+      agentPda,
+      params.delegateTo,
+      params.weight,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [delegator]);
+  }
+
+  async getDao(name: string): Promise<DaoAccount> {
+    const [daoPda] = findDaoAddress(name, this.programId);
+    const accountInfo = await this.connection.getAccountInfo(daoPda);
+    if (!accountInfo) {
+      throw new Error(`DAO '${name}' not found`);
+    }
+    return deserializeDao(Buffer.from(accountInfo.data));
+  }
+
+  async getProposal(daoName: string, proposalId: number): Promise<ProposalAccount> {
+    const [daoPda] = findDaoAddress(daoName, this.programId);
+    const [proposalPda] = findProposalAddress(daoPda, proposalId, this.programId);
+    const accountInfo = await this.connection.getAccountInfo(proposalPda);
+    if (!accountInfo) {
+      throw new Error(`Proposal ${proposalId} not found`);
+    }
+    return deserializeProposal(Buffer.from(accountInfo.data));
+  }
+
+  async getAgent(daoName: string, owner: PublicKey): Promise<AgentAccount> {
+    const [daoPda] = findDaoAddress(daoName, this.programId);
+    const [agentPda] = findAgentAddress(daoPda, owner, this.programId);
+    const accountInfo = await this.connection.getAccountInfo(agentPda);
