@@ -213,3 +213,63 @@ export class ZeroClient {
       daoPda,
       agentPda,
       params.delta,
+      params.reason,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [authority]);
+  }
+
+  async depositTreasury(
+    depositor: Keypair,
+    params: DepositTreasuryParams
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(params.daoName, this.programId);
+    const [treasuryPda] = findTreasuryAddress(daoPda, this.programId);
+
+    const instruction = createDepositTreasuryInstruction(
+      depositor.publicKey,
+      daoPda,
+      treasuryPda,
+      params.depositorTokenAccount,
+      params.treasuryTokenAccount,
+      params.tokenProgram,
+      params.amount,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [depositor]);
+  }
+
+  async withdrawTreasury(
+    authority: Keypair,
+    params: WithdrawTreasuryParams
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(params.daoName, this.programId);
+    const [treasuryPda] = findTreasuryAddress(daoPda, this.programId);
+
+    const instruction = createWithdrawTreasuryInstruction(
+      authority.publicKey,
+      daoPda,
+      treasuryPda,
+      params.destinationTokenAccount,
+      params.treasuryTokenAccount,
+      params.tokenProgram,
+      params.amount,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [authority]);
+  }
+
+  async delegateVotingPower(
+    delegator: Keypair,
+    params: DelegateVotingParams
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(params.daoName, this.programId);
+    const [agentPda] = findAgentAddress(daoPda, delegator.publicKey, this.programId);
+
+    const instruction = createDelegateVotingPowerInstruction(
