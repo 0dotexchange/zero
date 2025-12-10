@@ -168,3 +168,48 @@ export class ZeroClient {
     const [daoPda] = findDaoAddress(daoName, this.programId);
     const [proposalPda] = findProposalAddress(daoPda, proposalId, this.programId);
     const [treasuryPda] = findTreasuryAddress(daoPda, this.programId);
+
+    const instruction = createExecuteProposalInstruction(
+      authority.publicKey,
+      daoPda,
+      proposalPda,
+      treasuryPda,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [authority]);
+  }
+
+  async registerAgent(
+    owner: Keypair,
+    params: RegisterAgentParams
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(params.daoName, this.programId);
+    const [agentPda] = findAgentAddress(daoPda, owner.publicKey, this.programId);
+
+    const instruction = createRegisterAgentInstruction(
+      owner.publicKey,
+      daoPda,
+      agentPda,
+      params.agentName,
+      params.capabilities,
+      this.programId
+    );
+
+    const tx = new Transaction().add(instruction);
+    return sendAndConfirmTransaction(this.connection, tx, [owner]);
+  }
+
+  async updateAgentReputation(
+    authority: Keypair,
+    params: UpdateReputationParams
+  ): Promise<string> {
+    const [daoPda] = findDaoAddress(params.daoName, this.programId);
+    const [agentPda] = findAgentAddress(daoPda, params.agentOwner, this.programId);
+
+    const instruction = createUpdateAgentReputationInstruction(
+      authority.publicKey,
+      daoPda,
+      agentPda,
+      params.delta,
