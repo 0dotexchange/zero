@@ -308,3 +308,31 @@ export class ZeroClient {
     const [daoPda] = findDaoAddress(daoName, this.programId);
     const [agentPda] = findAgentAddress(daoPda, owner, this.programId);
     const accountInfo = await this.connection.getAccountInfo(agentPda);
+    if (!accountInfo) {
+      throw new Error(`Agent not found for owner ${owner.toBase58()}`);
+    }
+    return deserializeAgent(Buffer.from(accountInfo.data));
+  }
+
+  async getTreasury(daoName: string): Promise<TreasuryAccount> {
+    const [daoPda] = findDaoAddress(daoName, this.programId);
+    const [treasuryPda] = findTreasuryAddress(daoPda, this.programId);
+    const accountInfo = await this.connection.getAccountInfo(treasuryPda);
+    if (!accountInfo) {
+      throw new Error(`Treasury not found for DAO '${daoName}'`);
+    }
+    return deserializeTreasury(Buffer.from(accountInfo.data));
+  }
+
+  async getActiveProposals(daoName: string): Promise<ProposalAccount[]> {
+    const [daoPda] = findDaoAddress(daoName, this.programId);
+
+    const filters: GetProgramAccountsFilter[] = [
+      { memcmp: { offset: 1, bytes: daoPda.toBase58() } },
+    ];
+
+    const accounts = await this.connection.getProgramAccounts(this.programId, { filters });
+
+    const proposals: ProposalAccount[] = [];
+    for (const { account } of accounts) {
+      try {
