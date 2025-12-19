@@ -336,3 +336,54 @@ export class ZeroClient {
     const proposals: ProposalAccount[] = [];
     for (const { account } of accounts) {
       try {
+        const proposal = deserializeProposal(Buffer.from(account.data));
+        if (proposal.isInitialized && proposal.status === 0) {
+          proposals.push(proposal);
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return proposals;
+  }
+
+  async getDaoAgents(daoName: string): Promise<AgentAccount[]> {
+    const [daoPda] = findDaoAddress(daoName, this.programId);
+
+    const filters: GetProgramAccountsFilter[] = [
+      { memcmp: { offset: 1, bytes: daoPda.toBase58() } },
+    ];
+
+    const accounts = await this.connection.getProgramAccounts(this.programId, { filters });
+
+    const agents: AgentAccount[] = [];
+    for (const { account } of accounts) {
+      try {
+        const agent = deserializeAgent(Buffer.from(account.data));
+        if (agent.isInitialized) {
+          agents.push(agent);
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return agents;
+  }
+
+  private async findAssociatedTokenAccount(
+    owner: PublicKey,
+    mint: PublicKey
+  ): Promise<PublicKey> {
+    const [address] = PublicKey.findProgramAddressSync(
+      [
+        owner.toBuffer(),
+        new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA').toBuffer(),
+        mint.toBuffer(),
+      ],
+      new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL')
+    );
+    return address;
+  }
+}
