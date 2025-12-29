@@ -1,0 +1,27 @@
+{
+  "name": "@zero/cli",
+  "version": "0.1.0",
+  "description": "Command-line interface for the Zero AGI DAO governance protocol",
+  "main": "dist/index.js",
+  "bin": {
+    "zero": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0",
+    "commander": "^12.1.0",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "borsh": "^2.0.0",
+    "bn.js": "^5.2.1",
+    "bs58": "^5.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/bn.js": "^5.1.5"
+  },
+  "license": "Apache-2.0"
+}
