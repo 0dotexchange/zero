@@ -63,3 +63,43 @@ export function registerDaoCommands(program: Command): void {
       } catch (err: any) {
         error(err.message);
         process.exit(1);
+      }
+    });
+
+  dao
+    .command('info')
+    .description('Display DAO information')
+    .requiredOption('--name <name>', 'DAO name')
+    .action(async (opts) => {
+      try {
+        const connection = new Connection(getClusterUrl(), 'confirmed');
+        const programId = getProgramId();
+
+        const { findDaoAddress } = await import('../../sdk/src/utils');
+        const { deserializeDao } = await import('../../sdk/src/accounts/dao');
+
+        const [daoPda] = findDaoAddress(opts.name, programId);
+        const accountInfo = await connection.getAccountInfo(daoPda);
+
+        if (!accountInfo) {
+          error(`DAO '${opts.name}' not found`);
+          process.exit(1);
+        }
+
+        const dao = deserializeDao(Buffer.from(accountInfo.data));
+
+        header(`DAO: ${dao.name}`);
+        table([
+          ['Authority', dao.authority.toBase58()],
+          ['Token Mint', dao.tokenMint.toBase58()],
+          ['Quorum', formatBps(dao.quorumBps)],
+          ['Approval Threshold', formatBps(dao.approvalThresholdBps)],
+          ['Voting Period', `${Number(dao.votingPeriod)}s`],
+          ['Proposals', `${dao.proposalCount} total, ${dao.activeProposalCount} active`],
+          ['Agents', dao.agentCount.toString()],
+          ['Delegated Weight', dao.totalDelegatedWeight.toString()],
+          ['Created', formatTimestamp(dao.createdAt)],
+        ]);
+      } catch (err: any) {
+        error(err.message);
+        process.exit(1);
