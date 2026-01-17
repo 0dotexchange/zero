@@ -103,3 +103,39 @@ export function registerDaoCommands(program: Command): void {
       } catch (err: any) {
         error(err.message);
         process.exit(1);
+      }
+    });
+
+  dao
+    .command('config')
+    .description('Set CLI configuration')
+    .option('--cluster <url>', 'Solana cluster URL')
+    .option('--keypair <path>', 'Default keypair path')
+    .option('--program-id <address>', 'Program ID')
+    .option('--show', 'Show current configuration')
+    .action((opts) => {
+      if (opts.show) {
+        const config = loadConfig();
+        header('CLI Configuration');
+        table([
+          ['Cluster', config.cluster],
+          ['Keypair', config.keypairPath],
+          ['Program ID', config.programId],
+        ]);
+        return;
+      }
+
+      const updates: Record<string, string> = {};
+      if (opts.cluster) updates.cluster = opts.cluster;
+      if (opts.keypair) updates.keypairPath = opts.keypair;
+      if (opts.programId) updates.programId = opts.programId;
+
+      if (Object.keys(updates).length === 0) {
+        error('No configuration values provided');
+        return;
+      }
+
+      saveConfig(updates);
+      success('Configuration updated');
+    });
+}
