@@ -63,3 +63,53 @@ export function registerProposalCommands(program: Command): void {
         success(`Proposal #${proposalId} created`);
         keyValue('Signature', sig);
         keyValue('Proposal Address', proposalPda.toBase58());
+      } catch (err: any) {
+        error(err.message);
+        process.exit(1);
+      }
+    });
+
+  proposal
+    .command('info')
+    .description('Display proposal details')
+    .requiredOption('--dao <name>', 'DAO name')
+    .requiredOption('--id <number>', 'Proposal ID')
+    .action(async (opts) => {
+      try {
+        const connection = new Connection(getClusterUrl(), 'confirmed');
+        const programId = getProgramId();
+
+        const { findDaoAddress, findProposalAddress } = await import('../../sdk/src/utils');
+        const { deserializeProposal } = await import('../../sdk/src/accounts/proposal');
+
+        const [daoPda] = findDaoAddress(opts.dao, programId);
+        const [proposalPda] = findProposalAddress(daoPda, parseInt(opts.id), programId);
+
+        const accountInfo = await connection.getAccountInfo(proposalPda);
+        if (!accountInfo) {
+          error(`Proposal #${opts.id} not found`);
+          process.exit(1);
+        }
+
+        const prop = deserializeProposal(Buffer.from(accountInfo.data));
+
+        header(`Proposal #${prop.proposalId}`);
+        table([
+          ['Title', prop.title],
+          ['Status', formatStatus(prop.status)],
+          ['Proposer', prop.proposer.toBase58()],
+          ['Votes For', prop.votesFor.toString()],
+          ['Votes Against', prop.votesAgainst.toString()],
+          ['Voter Count', prop.voterCount.toString()],
+          ['Created', formatTimestamp(prop.createdAt)],
+          ['Voting Ends', formatTimestamp(prop.votingEndsAt)],
+        ]);
+
+        if (prop.finalizedAt) {
+          keyValue('Finalized', formatTimestamp(prop.finalizedAt));
+        }
+        if (prop.executedAt) {
+          keyValue('Executed', formatTimestamp(prop.executedAt));
+        }
+      } catch (err: any) {
+        error(err.message);
