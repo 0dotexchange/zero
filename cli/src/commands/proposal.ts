@@ -113,3 +113,40 @@ export function registerProposalCommands(program: Command): void {
         }
       } catch (err: any) {
         error(err.message);
+        process.exit(1);
+      }
+    });
+
+  proposal
+    .command('finalize')
+    .description('Finalize a proposal after voting ends')
+    .requiredOption('--dao <name>', 'DAO name')
+    .requiredOption('--id <number>', 'Proposal ID')
+    .option('--keypair <path>', 'Path to keypair file')
+    .action(async (opts) => {
+      try {
+        const keypair = loadKeypair(opts.keypair);
+        const connection = new Connection(getClusterUrl(), 'confirmed');
+        const programId = getProgramId();
+
+        const { findDaoAddress, findProposalAddress } = await import('../../sdk/src/utils');
+        const { createFinalizeProposalInstruction } = await import('../../sdk/src/instructions/proposal');
+
+        const [daoPda] = findDaoAddress(opts.dao, programId);
+        const [proposalPda] = findProposalAddress(daoPda, parseInt(opts.id), programId);
+
+        const ix = createFinalizeProposalInstruction(keypair.publicKey, daoPda, proposalPda, programId);
+
+        const sig = await withSpinner('Finalizing proposal', async () => {
+          const tx = new Transaction().add(ix);
+          return sendAndConfirmTransaction(connection, tx, [keypair]);
+        });
+
+        success(`Proposal #${opts.id} finalized`);
+        keyValue('Signature', sig);
+      } catch (err: any) {
+        error(err.message);
+        process.exit(1);
+      }
+    });
+}
