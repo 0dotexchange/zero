@@ -68,3 +68,49 @@ export function registerVoteCommands(program: Command): void {
       } catch (err: any) {
         error(err.message);
         process.exit(1);
+      }
+    });
+
+  vote
+    .command('delegate')
+    .description('Delegate voting power to another address')
+    .requiredOption('--dao <name>', 'DAO name')
+    .requiredOption('--to <address>', 'Delegate target address')
+    .requiredOption('--weight <number>', 'Delegation weight')
+    .option('--keypair <path>', 'Path to keypair file')
+    .action(async (opts) => {
+      try {
+        const keypair = loadKeypair(opts.keypair);
+        const connection = new Connection(getClusterUrl(), 'confirmed');
+        const programId = getProgramId();
+
+        const { findDaoAddress, findAgentAddress } = await import('../../sdk/src/utils');
+        const { createDelegateVotingPowerInstruction } = await import('../../sdk/src/instructions/vote');
+
+        const [daoPda] = findDaoAddress(opts.dao, programId);
+        const [agentPda] = findAgentAddress(daoPda, keypair.publicKey, programId);
+        const delegateTo = new PublicKey(opts.to);
+        const weight = parseInt(opts.weight);
+
+        header('Delegating Voting Power');
+        keyValue('To', delegateTo.toBase58());
+        keyValue('Weight', weight.toString());
+
+        const ix = createDelegateVotingPowerInstruction(
+          keypair.publicKey, daoPda, agentPda,
+          delegateTo, weight, programId
+        );
+
+        const sig = await withSpinner('Processing delegation', async () => {
+          const tx = new Transaction().add(ix);
+          return sendAndConfirmTransaction(connection, tx, [keypair]);
+        });
+
+        success('Voting power delegated');
+        keyValue('Signature', sig);
+      } catch (err: any) {
+        error(err.message);
+        process.exit(1);
+      }
+    });
+}
