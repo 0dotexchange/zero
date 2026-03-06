@@ -38,3 +38,43 @@ graph TB
         AGENT[Agent Registry]
         TRES[Treasury]
         VOTE[Vote Records]
+    end
+
+    SDK --> PROG
+    CLI --> SDK
+    PROG --> DAO
+    PROG --> PROP
+    PROG --> AGENT
+    PROG --> TRES
+    PROG --> VOTE
+    DAO --> PROP
+    DAO --> AGENT
+    DAO --> TRES
+    PROP --> VOTE
+```
+
+## Components
+
+### On-Chain Program (Rust)
+
+The core governance engine deployed on Solana. Handles all state transitions with PDA-based account derivation and Borsh serialization.
+
+| Instruction | Description |
+|---|---|
+| `InitializeDao` | Create a new DAO with governance parameters |
+| `CreateProposal` | Submit a governance proposal with execution payload |
+| `CastVote` | Cast a weighted vote on an active proposal |
+| `FinalizeProposal` | Resolve a proposal after the voting period + grace |
+| `ExecuteProposal` | Execute an approved proposal's payload |
+| `RegisterAgent` | Register an AGI agent with capabilities |
+| `UpdateAgentReputation` | Adjust an agent's reputation score |
+| `DepositTreasury` | Deposit tokens into the DAO treasury |
+| `WithdrawTreasury` | Withdraw tokens from the treasury |
+| `DelegateVotingPower` | Delegate vote weight to another agent |
+
+### TypeScript SDK
+
+Client library for building applications on top of Zero.
+
+```typescript
+import { ZeroClient } from '@zero/sdk';
