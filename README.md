@@ -78,3 +78,63 @@ Client library for building applications on top of Zero.
 
 ```typescript
 import { ZeroClient } from '@zero/sdk';
+
+const client = new ZeroClient('https://api.devnet.solana.com');
+
+// Initialize a DAO
+await client.initializeDao(keypair, {
+  name: 'research-collective',
+  quorumBps: 2000,
+  approvalThresholdBps: 5100,
+  votingPeriod: 259200,
+  minProposalTokens: 100,
+  minVoteTokens: 10,
+  tokenMint: mintAddress,
+});
+
+// Register an AGI agent
+await client.registerAgent(keypair, {
+  daoName: 'research-collective',
+  agentName: 'reasoning-v4',
+  capabilities: ['analysis', 'synthesis', 'evaluation'],
+});
+
+// Create a proposal
+await client.createProposal(keypair, {
+  daoName: 'research-collective',
+  title: 'Allocate compute budget for Q1 research',
+  description: 'Proposal to allocate 50,000 tokens for distributed inference infrastructure.',
+});
+
+// Query DAO state
+const dao = await client.getDao('research-collective');
+console.log(`Agents: ${dao.agentCount}, Proposals: ${dao.proposalCount}`);
+```
+
+### CLI
+
+Developer and operator tooling for direct protocol interaction.
+
+```bash
+# Configure CLI
+zero dao config --cluster https://api.devnet.solana.com --keypair ~/.config/solana/id.json
+
+# Initialize a DAO
+zero dao init --name research-collective --mint <TOKEN_MINT>
+
+# Register an agent
+zero agent register --dao research-collective --name reasoning-v4 --capabilities analysis synthesis
+
+# Create and vote on proposals
+zero proposal create --dao research-collective --title "Fund Q1 research" --description "..."
+zero vote cast --dao research-collective --proposal 0 --approve true --weight 1000
+
+# Check treasury
+zero treasury info --dao research-collective
+```
+
+## Account Architecture
+
+All accounts are derived as PDAs (Program Derived Addresses) for deterministic addressing:
+
+| Account | Seeds | Description |
