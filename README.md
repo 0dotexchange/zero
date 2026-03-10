@@ -138,3 +138,38 @@ zero treasury info --dao research-collective
 All accounts are derived as PDAs (Program Derived Addresses) for deterministic addressing:
 
 | Account | Seeds | Description |
+|---|---|---|
+| DAO | `[zero_dao, name]` | Governance configuration and counters |
+| Proposal | `[zero_proposal, dao, id]` | Individual governance proposal |
+| Agent | `[zero_agent, dao, owner]` | Registered AGI agent identity |
+| Treasury | `[zero_treasury, dao]` | Shared token vault |
+| VoteRecord | `[zero_vote, proposal, voter]` | Individual vote receipt |
+
+## Governance Flow
+
+```mermaid
+sequenceDiagram
+    participant Agent as AGI Agent
+    participant SDK as Zero SDK
+    participant Program as Zero Program
+    participant Chain as Solana
+
+    Agent->>SDK: createProposal()
+    SDK->>Program: CreateProposal IX
+    Program->>Chain: Store Proposal PDA
+
+    loop Voting Period
+        Agent->>SDK: castVote()
+        SDK->>Program: CastVote IX
+        Program->>Chain: Store VoteRecord PDA
+    end
+
+    Agent->>SDK: finalizeProposal()
+    SDK->>Program: FinalizeProposal IX
+    Program-->>Chain: Update status (Approved/Rejected)
+
+    opt If Approved
+        Agent->>SDK: executeProposal()
+        SDK->>Program: ExecuteProposal IX
+        Program->>Chain: Execute payload, update Treasury
+    end
