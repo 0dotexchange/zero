@@ -173,3 +173,23 @@ sequenceDiagram
         SDK->>Program: ExecuteProposal IX
         Program->>Chain: Execute payload, update Treasury
     end
+```
+
+## Installation
+
+```bash
+git clone https://github.com/0dotexchange/zero.git
+cd zero
+```
+
+### Build the on-chain program
+
+```bash
+cd product/program
+cargo build-bpf
+```
+
+### Build the SDK and CLI
+
+```bash
+cd product/sdk && npm install && npm run build
