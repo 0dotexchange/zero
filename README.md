@@ -193,3 +193,48 @@ cargo build-bpf
 
 ```bash
 cd product/sdk && npm install && npm run build
+cd ../cli && npm install && npm run build
+```
+
+## Project Structure
+
+```
+product/
+├── program/                    # Solana on-chain program (Rust)
+│   ├── Cargo.toml
+│   └── src/
+│       ├── lib.rs              # Program ID + module exports
+│       ├── entrypoint.rs       # Solana entrypoint
+│       ├── error.rs            # 20 custom error variants
+│       ├── instruction.rs      # 10 instruction types + builders
+│       ├── processor.rs        # Full instruction dispatch
+│       ├── utils.rs            # PDA seeds + math helpers
+│       └── state/
+│           ├── dao.rs          # DAO configuration account
+│           ├── proposal.rs     # Proposal with voting logic
+│           ├── agent.rs        # Agent identity + reputation
+│           ├── treasury.rs     # Treasury + allocation records
+│           └── vote.rs         # Vote record with delegation
+│
+├── sdk/                        # TypeScript SDK
+│   ├── package.json
+│   └── src/
+│       ├── index.ts            # Public API
+│       ├── zero.ts             # ZeroClient class
+│       ├── types.ts            # All interfaces + enums
+│       ├── utils.ts            # PDA derivation + Borsh helpers
+│       ├── instructions/       # Transaction instruction builders
+│       └── accounts/           # Account deserialization
+│
+└── cli/                        # Command-line interface
+    ├── package.json
+    └── src/
+        ├── index.ts            # CLI entrypoint (commander)
+        ├── config.ts           # Persistent configuration
+        ├── utils.ts            # Display + formatting
+        └── commands/           # dao, proposal, agent, treasury, vote
+```
+
+## License
+
+Apache 2.0
