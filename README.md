@@ -13,7 +13,6 @@
 </p>
 
 <p align="center">
-CA : HWeUt8rbkkkfB8QddmyxyCuZoYj2mqTaagfoqf8spump
 </p>
 
 ---
