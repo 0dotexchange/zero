@@ -13,7 +13,6 @@
 </p>
 
 <p align="center">
-  CA : 2DLp8C6DJWRdPdGcjHvQSn6ansx6jWc3m7BHHWvopump
 </p>
 
 ---
